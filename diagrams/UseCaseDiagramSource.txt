@@ -1,0 +1,75 @@
+@startuml
+left to right direction
+
+skinparam packageStyle rectangle
+skinparam usecase {
+  BackgroundColor #f0f8ff
+  BorderColor #2c3e50
+  ArrowColor #2c3e50
+}
+skinparam actor {
+  BackgroundColor #dfe6e9
+  BorderColor #2c3e50
+}
+skinparam linetype ortho
+skinparam nodesep 60
+skinparam ranksep 80
+
+actor Client
+actor Consultant
+actor Admin
+actor PaymentService
+
+rectangle "Service Booking & Consulting Platform" {
+
+  package "Client Use Cases" #e8f4f8 {
+    (Browse Consulting Services) as UC1
+    (Request a Booking) as UC2
+    (Cancel a Booking) as UC3
+    (View Booking History) as UC4
+    (Process Payment) as UC5
+    (Manage Payment Methods) as UC6
+    (View Payment History) as UC7
+  }
+
+  package "Consultant Use Cases" #fff3e0 {
+    (Manage Availability) as UC8
+    (Accept or Reject Booking Request) as UC9
+    (Complete a Booking) as UC10
+  }
+
+  package "Admin Use Cases" #f3e5f5 {
+    (Approve Consultant Registration) as UC11
+    (Define System Policies) as UC12
+  }
+
+}
+
+Client -- UC1
+Client -- UC2
+Client -- UC3
+Client -- UC4
+Client -- UC5
+Client -- UC6
+Client -- UC7
+
+Consultant -- UC8
+Consultant -- UC9
+Consultant -- UC10
+
+Admin -- UC11
+Admin -- UC12
+
+UC2 .> UC8 : «extend»
+UC9 .> UC2 : «extend»
+UC9 .> UC3 : «extend»
+UC11 .> UC8 : «extend»
+UC5 .> UC6 : «extend»
+
+UC3 .> UC4 : «include»
+UC3 .> UC7 : «include»
+UC10 .> UC4 : «include»
+
+UC5 -- PaymentService
+
+@enduml
