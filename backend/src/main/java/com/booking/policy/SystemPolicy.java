@@ -10,12 +10,26 @@ public class SystemPolicy {
     private double refundPercentageOverride; // -1 means use policy default
 
     public SystemPolicy() {
-
+        this.cancellationPolicyType = "FLEXIBLE";
+        this.defaultPaymentMethod = "CREDIT_CARD";
+        this.notificationSettings = new HashMap<>();
+        this.notificationSettings.put("channel", "BOTH");
+        this.notificationSettings.put("emailEnabled", "true");
+        this.notificationSettings.put("inAppEnabled", "true");
+        this.refundPercentageOverride = -1;
     }
 
     // Returns the active cancellation policy instance based on configured type.
     public CancellationPolicy getCancellationPolicy() {
-
+        switch (cancellationPolicyType.toUpperCase()) {
+            case "STRICT":
+                return new StrictCancellationPolicy();
+            case "NO_CANCELLATION":
+                return new NoCancellationPolicy();
+            case "FLEXIBLE":
+            default:
+                return new FlexibleCancellationPolicy();
+        }
     }
 
     // Getters & Setters
@@ -56,8 +70,10 @@ public class SystemPolicy {
         return refundPercentageOverride;
     }
 
+    // toString Object representation
     @Override
     public String toString() {
-
+        return  String.format("SystemPolicy[cancellation=%s, payment=%s, notifications=%s]",
+                cancellationPolicyType, defaultPaymentMethod, notificationSettings);
     }
 }
