@@ -25,31 +25,35 @@ public class SystemPolicy {
     }
 
     public void setCancellationPolicyType(String type) {
-
+        this.cancellationPolicyType = type;
+        System.out.println("[SystemPolicy] Cancellation policy updated to: " + type);
     }
 
     public void setDefaultPaymentMethod(String method) {
-
+        this.defaultPaymentMethod = method;
+        System.out.println("[SystemPolicy] Default payment method set to: " + method);
     }
 
     public void setNotificationSetting(String key, String value) {
-
+        notificationSettings.put(key, value);
+        System.out.println("[SystemPolicy] Notification setting '" + key + "' = '" + value + "'");
     }
 
     public void setRefundPercentageOverride(double pct) {
-
+        this.refundPercentageOverride = pct;
+        System.out.println("[SystemPolicy] Refund override set to: " + pct + "%");
     }
 
     public String getCancellationPolicyType() { 
-
+        return cancellationPolicyType; 
     }
 
     public String getDefaultPaymentMethod() { 
-
+        return defaultPaymentMethod; 
     }
 
     public double getRefundPercentageOverride() { 
-
+        return refundPercentageOverride;
     }
 
     @Override
