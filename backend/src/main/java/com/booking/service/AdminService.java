@@ -1,10 +1,8 @@
 package com.booking.service;
-
 import com.booking.domain.Admin;
 import com.booking.domain.User;
 import com.booking.policy.SystemPolicy;
 import com.booking.singleton.DatabaseManager;
-
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
