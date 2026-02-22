@@ -1,6 +1,7 @@
 package com.booking.domain;
 
 import com.booking.domain.state.BookingState;
+import com.booking.domain.state.RequestedState;
 import com.booking.observer.BookingObserver;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -98,8 +99,7 @@ public class Booking {
 
   // Getters, setters
   public double getTotalPrice() {
-    // TODO: figure out what to do here
-    return 0.0;
+    return service != null ? service.getBasePrice() : 0.0;
   }
 
   public int getId() {
