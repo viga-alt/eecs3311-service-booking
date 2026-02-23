@@ -2,47 +2,44 @@ package com.booking.domain.state;
 
 import com.booking.domain.Booking;
 
-/*
- * Terminal state
- * Consultant declined the booking, no changes to state allowed
+/* STATE PATTERN - RejectedState
+ * Terminal state: consultant declined the booking
+ * No further transitions allowed
  */
 public class RejectedState implements BookingState {
 
-  // TODO: implement this class
-  // attempting to modify this state should create an error
+    @Override
+    public void confirm(Booking booking) {
+        System.out.println("[State] Cannot confirm — booking #" + booking.getId() + " was already rejected.");
+    }
 
-  @Override
-  public void confirm(Booking booking) {
-    return;
-  }
+    @Override
+    public void reject(Booking booking) {
+        System.out.println("[State] Booking #" + booking.getId() + " is already rejected.");
+    }
 
-  @Override
-  public void reject(Booking booking) {
-    return;
-  }
+    @Override
+    public void markPendingPayment(Booking booking) {
+        System.out.println("[State] Cannot process payment — booking was rejected.");
+    }
 
-  @Override
-  public void markPendingPayment(Booking booking) {
-    return;
-  }
+    @Override
+    public void markPaid(Booking booking) {
+        System.out.println("[State] Cannot mark paid — booking was rejected.");
+    }
 
-  @Override
-  public void markPaid(Booking booking) {
-    return;
-  }
+    @Override
+    public void cancel(Booking booking) {
+        System.out.println("[State] Booking #" + booking.getId() + " is already rejected, cancellation not applicable.");
+    }
 
-  @Override
-  public void cancel(Booking booking) {
-    return;
-  }
+    @Override
+    public void complete(Booking booking) {
+        System.out.println("[State] Cannot complete — booking was rejected.");
+    }
 
-  @Override
-  public void complete(Booking booking) {
-    return;
-  }
-
-  @Override
-  public String getStateName() {
-    return "REJECTED";
-  }
+    @Override
+    public String getStateName() { 
+        return "REJECTED"; 
+    }
 }

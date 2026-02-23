@@ -6,36 +6,37 @@ import com.booking.domain.Booking;
 // Booking is completed, no further actions are allowed
 public class CompletedState implements BookingState {
 
-  // TODO: implement this class
   // Attempts to change this state should log an error
   @Override
   public void confirm(Booking booking) {
-    return;
+    System.out.println("[State] Booking #" + booking.getId() + " is already completed.");
   }
 
   @Override
   public void reject(Booking booking) {
-    return;
+    System.out.println(
+        "[State] Cannot reject — booking #" + booking.getId() + " is already completed.");
   }
 
   @Override
   public void markPendingPayment(Booking booking) {
-    return;
+    System.out.println("[State] Booking #" + booking.getId() + " is already completed.");
   }
 
   @Override
   public void markPaid(Booking booking) {
-    return;
+    System.out.println("[State] Booking #" + booking.getId() + " is already completed.");
   }
 
   @Override
   public void cancel(Booking booking) {
-    return;
+    System.out.println(
+        "[State] Cannot cancel — booking #" + booking.getId() + " is already completed.");
   }
 
   @Override
   public void complete(Booking booking) {
-    return;
+    System.out.println("[State] Booking #" + booking.getId() + " is already completed.");
   }
 
   @Override

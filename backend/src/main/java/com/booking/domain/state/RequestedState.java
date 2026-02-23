@@ -3,6 +3,7 @@ package com.booking.domain.state;
 import com.booking.domain.Booking;
 
 /*
+ * STATE PATTERN
  * Initial state when a client submits a booking request
  * Valid transitions:
  *      confirm -> ConfirmedState,
@@ -11,36 +12,41 @@ import com.booking.domain.Booking;
  */
 public class RequestedState implements BookingState {
 
-  // TODO: implement this class
-
   @Override
   public void confirm(Booking booking) {
-    return;
+    System.out.println("[State] Booking #" + booking.getId() + " confirmed by consultant.");
+    booking.setState(new ConfirmedState());
+    booking.notifyObservers("BOOKING_CONFIRMED");
   }
 
   @Override
   public void reject(Booking booking) {
-    return;
+    System.out.println("[State] Booking #" + booking.getId() + " rejected by consultant.");
+    booking.setState(new RejectedState());
+    booking.notifyObservers("BOOKING_REJECTED");
   }
 
   @Override
   public void markPendingPayment(Booking booking) {
-    return;
+    System.out.println("[State] Cannot mark pending payment — booking not yet confirmed.");
   }
 
   @Override
   public void markPaid(Booking booking) {
-    return;
+    System.out.println("[State] Cannot mark paid — booking not yet confirmed.");
   }
 
   @Override
   public void cancel(Booking booking) {
-    return;
+    System.out.println(
+        "[State] Booking #" + booking.getId() + " cancelled while in Requested state.");
+    booking.setState(new CancelledState());
+    booking.notifyObservers("BOOKING_CANCELLED");
   }
 
   @Override
   public void complete(Booking booking) {
-    return;
+    System.out.println("[State] Cannot complete — booking not yet confirmed or paid.");
   }
 
   @Override
