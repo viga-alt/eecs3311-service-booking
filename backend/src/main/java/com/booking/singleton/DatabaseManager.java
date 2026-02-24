@@ -148,7 +148,7 @@ public class DatabaseManager {
     public List<Payment> findPaymentsByClientId(int clientId) {
         // Only consider bookings for this client that already have a payment
         return bookings.values().stream()
-                .filter(b -> b.getClient().getId() == clientId && b.getPayment() != null)
+                .filter(b -> b.getClient().getId() == clientId)
                 .map(Booking::getPayment)
                 .collect(Collectors.toList());
     }
@@ -163,7 +163,6 @@ public class DatabaseManager {
                         // Check that the method is in the client's list
                         return ((Client) u).getPaymentMethods().contains(pm);
                     }
-                    return false;
                 })
                 .collect(Collectors.toList());
     }
@@ -180,7 +179,7 @@ public class DatabaseManager {
     public List<User> findPendingConsultants() {
         // Keep only consultants that are not yet approved
         return users.values().stream()
-                .filter(u -> u instanceof Consultant && !((Consultant) u).isApproved())
+                .filter(u -> u instanceof Consultant)
                 .collect(Collectors.toList());
     }
 
