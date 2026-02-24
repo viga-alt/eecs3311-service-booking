@@ -1,5 +1,12 @@
 package com.booking.singleton;
 
+import com.booking.domain.*;
+
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.*;
+import java.util.stream.*;
+
 /* SINGLETON PATTERN - DatabaseManager
  * Single shared instance that manages all in-memory data stores
  * Acts as the simulated persistence layer for all entities
@@ -117,6 +124,64 @@ public class DatabaseManager {
 
     public List<PaymentMethod> findAllPaymentMethods() {
         return new ArrayList<>(paymentMethods.values());
+    }
+
+    // Filtered queries
+
+    // Return all bookings made by a particular client
+    public List<Booking> findBookingsByClientId(int clientId) {
+        // Keep only bookings whose client id matches the requested one
+        return bookings.values().stream()
+                .filter(b -> b.getClient().getId() == clientId)
+                .collect(Collectors.toList());
+    }
+
+    // Return all bookings assigned to a particular consultant
+    public List<Booking> findBookingsByConsultantId(int consultantId) {
+        // Keep only bookings whose consultant id matches the requested one
+        return bookings.values().stream()
+                .filter(b -> b.getConsultant().getId() == consultantId)
+                .collect(Collectors.toList());
+    }
+
+    // Return all payments made by a particular client
+    public List<Payment> findPaymentsByClientId(int clientId) {
+        // Only consider bookings for this client that already have a payment
+        return bookings.values().stream()
+                .filter(b -> b.getClient().getId() == clientId && b.getPayment() != null)
+                .map(Booking::getPayment)
+                .collect(Collectors.toList());
+    }
+
+    // Return all payment methods owned by a particular client
+    public List<PaymentMethod> findPaymentMethodsByClientId(int clientId) {
+        return paymentMethods.values().stream()
+                .filter(pm -> {
+                    User u = users.get(clientId);
+                    // Only a client can own payment methods
+                    if (u instanceof Client) {
+                        // Check that the method is in the client's list
+                        return ((Client) u).getPaymentMethods().contains(pm);
+                    }
+                    return false;
+                })
+                .collect(Collectors.toList());
+    }
+
+    // Return all users that are consultants
+    public List<User> findConsultants() {
+        // Keep only those whose type is Consultant
+        return users.values().stream()
+                .filter(u -> u instanceof Consultant)
+                .collect(Collectors.toList());
+    }
+
+    // Return consultants that are still pending approval
+    public List<User> findPendingConsultants() {
+        // Keep only consultants that are not yet approved
+        return users.values().stream()
+                .filter(u -> u instanceof Consultant && !((Consultant) u).isApproved())
+                .collect(Collectors.toList());
     }
 
     // Delete
