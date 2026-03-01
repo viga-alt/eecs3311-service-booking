@@ -1,5 +1,15 @@
 package com.booking.policy;
 
+import com.booking.strategy.cancellation.CancellationPolicy;
+import com.booking.strategy.cancellation.FlexibleCancellationPolicy;
+import com.booking.strategy.cancellation.NoCancellationPolicy;
+import com.booking.strategy.cancellation.StrictCancellationPolicy;
+
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.*;
+import java.util.stream.*;
+
 /* Holds platform-wide system policies configured by the Admin
  * Controls: cancellation rules, default payment strategy, notification settings, refund policies
  */
