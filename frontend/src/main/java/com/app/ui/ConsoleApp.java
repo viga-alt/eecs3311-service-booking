@@ -52,8 +52,7 @@ public class ConsoleApp {
 
         Client client1 = new Client(2, "Bob Client", "bob@email.com", "pass123");
         Client client2 = new Client(3, "Carol Client", "carol@email.com", "pass456");
-        db.saveUser(client1);
-        db.saveUser(client2);
+        db.saveUser(client1); db.saveUser(client2);
 
         Consultant c1 = new Consultant(4, "Dave Consultant", "dave@consult.com", "pass789", "Software Engineering");
         Consultant c2 = new Consultant(5, "Eve Consultant", "eve@consult.com", "passabc", "Career Advising");
@@ -77,7 +76,6 @@ public class ConsoleApp {
         db.saveTimeSlot(ts1); db.saveTimeSlot(ts2); db.saveTimeSlot(ts3);
         db.saveUser(c1);
 
-        // seed Bob's credit card so payment can be tested without manual setup
         PaymentMethod pm = paymentService.createPaymentMethod("CREDIT_CARD");
         pm.addDetail("cardNumber", "4111111111111111");
         pm.addDetail("expiry", "12/27");
@@ -124,18 +122,21 @@ public class ConsoleApp {
         System.out.println("  2  Request Booking");
         System.out.println("  3  Cancel Booking");
         System.out.println("  4  View Booking History");
-        System.out.println("  5  Process Payment       [coming soon]");
-        System.out.println("  6  Manage Payment Methods [coming soon]");
-        System.out.println("  7  View Payment History   [coming soon]");
+        System.out.println("  5  Process Payment");
+        System.out.println("  6  Manage Payment Methods");
+        System.out.println("  7  View Payment History");
         System.out.println("  0  Logout");
         System.out.print("Choice: ");
 
         switch (scanner.nextLine().trim()) {
-            case "1": browseServices();           break;
-            case "2": requestBooking(client);     break;
-            case "3": cancelBooking(client);      break;
-            case "4": viewBookingHistory(client); break;
-            case "0": logout();                   break;
+            case "1": browseServices();            break;
+            case "2": requestBooking(client);      break;
+            case "3": cancelBooking(client);       break;
+            case "4": viewBookingHistory(client);  break;
+            case "5": processPayment(client);      break;
+            case "6": managePaymentMethods(client);break;
+            case "7": viewPaymentHistory(client);  break;
+            case "0": logout();                    break;
             default:  System.out.println("Invalid choice.");
         }
     }
@@ -188,11 +189,165 @@ public class ConsoleApp {
         bookings.forEach(b -> System.out.println("  " + b));
     }
 
-    // CONSULTANT MENU — stub
+    private static void processPayment(Client client) {
+        List<Booking> pending = bookingService.getBookingHistory(client.getId()).stream()
+                .filter(b -> "PENDING_PAYMENT".equals(b.getCurrentStateName()))
+                .collect(Collectors.toList());
+        if (pending.isEmpty()) { System.out.println("No bookings awaiting payment."); return; }
+
+        pending.forEach(b -> System.out.println("  [" + b.getId() + "] " + b + " $" + b.getTotalPrice()));
+        System.out.print("Booking ID: ");
+        Booking booking = db.findBookingById(readInt());
+        if (booking == null) { System.out.println("Booking not found."); return; }
+
+        List<PaymentMethod> methods = client.getPaymentMethods();
+        if (methods.isEmpty()) { System.out.println("No saved payment methods. Add one via option 6."); return; }
+        methods.forEach(pm -> System.out.println("  [" + pm.getId() + "] " + pm));
+        System.out.print("Payment Method ID (0 = default): ");
+        int pmId = readInt();
+        PaymentMethod method = pmId == 0 ? client.getDefaultPaymentMethod() : client.getPaymentMethodById(pmId);
+        if (method == null) { System.out.println("Payment method not found."); return; }
+
+        Payment payment = paymentService.processPayment(booking, method);
+        if (payment != null) {
+            System.out.println("Payment complete: " + payment);
+            System.out.println("Booking state: " + booking.getCurrentStateName());
+        }
+    }
+
+    private static void managePaymentMethods(Client client) {
+        System.out.println("  1 View  2 Add Credit Card  3 Add Debit Card");
+        System.out.println("  4 Add PayPal  5 Add Bank Transfer  6 Remove  7 Set Default");
+        System.out.print("Choice: ");
+        switch (scanner.nextLine().trim()) {
+            case "1": client.getPaymentMethods().forEach(pm -> System.out.println("  " + pm)); break;
+            case "2": addCardMethod(client, "CREDIT_CARD"); break;
+            case "3": addCardMethod(client, "DEBIT_CARD");  break;
+            case "4": addPayPalMethod(client);              break;
+            case "5": addBankMethod(client);                break;
+            case "6":
+                client.getPaymentMethods().forEach(pm -> System.out.println("  [" + pm.getId() + "] " + pm));
+                System.out.print("ID to remove: ");
+                client.removePaymentMethod(readInt());
+                break;
+            case "7":
+                client.getPaymentMethods().forEach(pm -> System.out.println("  [" + pm.getId() + "] " + pm));
+                System.out.print("ID to set as default: ");
+                client.setDefaultPaymentMethod(readInt());
+                System.out.println("Default updated.");
+                break;
+        }
+    }
+
+    private static void addCardMethod(Client client, String type) {
+        System.out.print("Card number (16 digits): "); String num = scanner.nextLine().trim();
+        System.out.print("Expiry (MM/YY): ");          String exp = scanner.nextLine().trim();
+        System.out.print("CVV (3-4 digits): ");         String cvv = scanner.nextLine().trim();
+        PaymentMethod pm = paymentService.createPaymentMethod(type);
+        pm.addDetail("cardNumber", num);
+        pm.addDetail("expiry", exp);
+        pm.addDetail("cvv", cvv);
+        client.addPaymentMethod(pm);
+        db.saveUser(client);
+        System.out.println(type + " added.");
+    }
+
+    private static void addPayPalMethod(Client client) {
+        System.out.print("PayPal email: ");
+        PaymentMethod pm = paymentService.createPaymentMethod("PAYPAL");
+        pm.addDetail("email", scanner.nextLine().trim());
+        client.addPaymentMethod(pm);
+        db.saveUser(client);
+        System.out.println("PayPal added.");
+    }
+
+    private static void addBankMethod(Client client) {
+        System.out.print("Account number (8-17 digits): "); String acct    = scanner.nextLine().trim();
+        System.out.print("Routing number (9 digits): ");    String routing = scanner.nextLine().trim();
+        PaymentMethod pm = paymentService.createPaymentMethod("BANK_TRANSFER");
+        pm.addDetail("accountNumber", acct);
+        pm.addDetail("routingNumber", routing);
+        client.addPaymentMethod(pm);
+        db.saveUser(client);
+        System.out.println("Bank transfer added.");
+    }
+
+    private static void viewPaymentHistory(Client client) {
+        List<Payment> payments = paymentService.getPaymentHistory(client.getId());
+        if (payments.isEmpty()) { System.out.println("No payments found."); return; }
+        payments.forEach(p -> System.out.println("  " + p));
+    }
+
+    // CONSULTANT MENU
 
     private static void showConsultantMenu() {
-        System.out.println("\nCONSULTANT MENU — coming soon");
-        logout();
+        Consultant consultant = (Consultant) currentUser;
+        System.out.println("\nCONSULTANT MENU");
+        System.out.println("  1  Manage Availability");
+        System.out.println("  2  View Pending Requests");
+        System.out.println("  3  Accept Booking");
+        System.out.println("  4  Reject Booking");
+        System.out.println("  5  Complete Booking");
+        System.out.println("  6  View All My Bookings");
+        System.out.println("  0  Logout");
+        System.out.print("Choice: ");
+
+        switch (scanner.nextLine().trim()) {
+            case "1": manageAvailability(consultant);     break;
+            case "2": viewPendingBookings(consultant);    break;
+            case "3": acceptBooking(consultant);          break;
+            case "4": rejectBooking(consultant);          break;
+            case "5": completeBooking(consultant);        break;
+            case "6": viewConsultantBookings(consultant); break;
+            case "0": logout();                           break;
+            default:  System.out.println("Invalid choice.");
+        }
+    }
+
+    private static void manageAvailability(Consultant consultant) {
+        consultant.getAvailableSlots().forEach(ts -> System.out.println("  " + ts));
+        System.out.print("Days from today: ");  int days     = readInt();
+        System.out.print("Start hour (0-23): "); int startH  = readInt();
+        System.out.print("Duration (hours): ");  int duration = readInt();
+        int id = (int)(System.currentTimeMillis() % 100000);
+        TimeSlot slot = new TimeSlot(id,
+                LocalDateTime.now().plusDays(days).withHour(startH).withMinute(0).withSecond(0),
+                LocalDateTime.now().plusDays(days).withHour(startH + duration).withMinute(0).withSecond(0));
+        consultantService.addSlot(consultant.getId(), slot);
+        System.out.println("Slot added: " + slot);
+    }
+
+    private static void viewPendingBookings(Consultant consultant) {
+        List<Booking> pending = bookingService.getPendingBookingsForConsultant(consultant.getId());
+        if (pending.isEmpty()) { System.out.println("No pending requests."); return; }
+        pending.forEach(b -> System.out.println("  [" + b.getId() + "] " + b));
+    }
+
+    private static void acceptBooking(Consultant consultant) {
+        viewPendingBookings(consultant);
+        System.out.print("Booking ID to accept: ");
+        bookingService.acceptBooking(readInt(), consultant.getId());
+    }
+
+    private static void rejectBooking(Consultant consultant) {
+        viewPendingBookings(consultant);
+        System.out.print("Booking ID to reject: ");
+        bookingService.rejectBooking(readInt(), consultant.getId());
+    }
+
+    private static void completeBooking(Consultant consultant) {
+        List<Booking> paid = bookingService.getBookingsForConsultant(consultant.getId()).stream()
+                .filter(b -> "PAID".equals(b.getCurrentStateName()))
+                .collect(Collectors.toList());
+        if (paid.isEmpty()) { System.out.println("No paid bookings to complete."); return; }
+        paid.forEach(b -> System.out.println("  [" + b.getId() + "] " + b));
+        System.out.print("Booking ID to complete: ");
+        bookingService.completeBooking(readInt(), consultant.getId());
+    }
+
+    private static void viewConsultantBookings(Consultant consultant) {
+        bookingService.getBookingsForConsultant(consultant.getId())
+                .forEach(b -> System.out.println("  " + b));
     }
 
     // ADMIN MENU — stub
