@@ -7,6 +7,7 @@ import com.booking.singleton.DatabaseManager;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.*;
 
 public class ConsoleApp {
 
@@ -24,13 +25,10 @@ public class ConsoleApp {
     public static void main(String[] args) {
         initServices();
         populateData();
-
         System.out.println("--- Service Booking & Consulting Platform ---");
-
         while (true) {
-            if (currentUser == null) {
-                showLoginMenu();
-            } else {
+            if (currentUser == null) showLoginMenu();
+            else {
                 switch (currentUser.getRole()) {
                     case "CLIENT":     showClientMenu();     break;
                     case "CONSULTANT": showConsultantMenu(); break;
@@ -59,8 +57,7 @@ public class ConsoleApp {
 
         Consultant c1 = new Consultant(4, "Dave Consultant", "dave@consult.com", "pass789", "Software Engineering");
         Consultant c2 = new Consultant(5, "Eve Consultant", "eve@consult.com", "passabc", "Career Advising");
-        db.saveUser(c1);
-        db.saveUser(c2);
+        db.saveUser(c1); db.saveUser(c2);
         consultantService.approveConsultant(4);
 
         Service s1 = new Service(1, "Software Architecture Review", 60, 150.00, "Review your system design");
@@ -80,6 +77,14 @@ public class ConsoleApp {
         db.saveTimeSlot(ts1); db.saveTimeSlot(ts2); db.saveTimeSlot(ts3);
         db.saveUser(c1);
 
+        // seed Bob's credit card so payment can be tested without manual setup
+        PaymentMethod pm = paymentService.createPaymentMethod("CREDIT_CARD");
+        pm.addDetail("cardNumber", "4111111111111111");
+        pm.addDetail("expiry", "12/27");
+        pm.addDetail("cvv", "123");
+        client1.addPaymentMethod(pm);
+        db.saveUser(client1);
+
         System.out.println("Sample data loaded for demonstration and testing. Have fun.\n");
     }
 
@@ -95,17 +100,14 @@ public class ConsoleApp {
         System.out.print("Email: ");
         String email = scanner.nextLine().trim();
         if (email.equals("0")) { System.out.println("Goodbye!"); System.exit(0); }
-
         System.out.print("Password: ");
         String password = scanner.nextLine().trim();
 
         currentUser = db.findAllUsers().stream()
                 .filter(u -> u.login(email, password)).findFirst().orElse(null);
 
-        if (currentUser == null)
-            System.out.println("Invalid credentials. Try again.");
-        else
-            System.out.println("Welcome, " + currentUser.getName() + " [" + currentUser.getRole() + "]");
+        if (currentUser == null) System.out.println("Invalid credentials. Try again.");
+        else System.out.println("Welcome, " + currentUser.getName() + " [" + currentUser.getRole() + "]");
     }
 
     private static void logout() {
@@ -113,17 +115,87 @@ public class ConsoleApp {
         currentUser = null;
     }
 
-    // --- stubs ---
+    // CLIENT MENU
 
     private static void showClientMenu() {
-        System.out.println("\nCLIENT MENU — coming soon");
-        logout();
+        Client client = (Client) currentUser;
+        System.out.println("\nCLIENT MENU");
+        System.out.println("  1  Browse Services");
+        System.out.println("  2  Request Booking");
+        System.out.println("  3  Cancel Booking");
+        System.out.println("  4  View Booking History");
+        System.out.println("  5  Process Payment       [coming soon]");
+        System.out.println("  6  Manage Payment Methods [coming soon]");
+        System.out.println("  7  View Payment History   [coming soon]");
+        System.out.println("  0  Logout");
+        System.out.print("Choice: ");
+
+        switch (scanner.nextLine().trim()) {
+            case "1": browseServices();           break;
+            case "2": requestBooking(client);     break;
+            case "3": cancelBooking(client);      break;
+            case "4": viewBookingHistory(client); break;
+            case "0": logout();                   break;
+            default:  System.out.println("Invalid choice.");
+        }
     }
+
+    private static void browseServices() {
+        List<Service> services = consultantService.getAllServices();
+        if (services.isEmpty()) { System.out.println("No services available."); return; }
+        services.forEach(s -> System.out.println("  " + s));
+    }
+
+    private static void requestBooking(Client client) {
+        List<Consultant> consultants = consultantService.getAllApprovedConsultants();
+        if (consultants.isEmpty()) { System.out.println("No approved consultants available."); return; }
+
+        consultants.forEach(c -> System.out.println("  [" + c.getId() + "] " + c.getName() + " (" + c.getSpecialization() + ")"));
+        System.out.print("Consultant ID: ");
+        Consultant consultant = consultantService.getConsultantById(readInt());
+        if (consultant == null) { System.out.println("Not found."); return; }
+
+        List<TimeSlot> slots = consultantService.getAvailableSlots(consultant.getId());
+        if (slots.isEmpty()) { System.out.println("No available slots."); return; }
+        slots.forEach(ts -> System.out.println("  [" + ts.getId() + "] " + ts));
+        System.out.print("Slot ID: ");
+        TimeSlot slot = consultant.findSlotById(readInt());
+        if (slot == null || !slot.isAvailable()) { System.out.println("Slot not available."); return; }
+
+        List<Service> services = consultant.getOfferedServices();
+        services.forEach(s -> System.out.println("  [" + s.getId() + "] " + s));
+        System.out.print("Service ID: ");
+        int sid = readInt();
+        Service service = services.stream().filter(s -> s.getId() == sid).findFirst().orElse(null);
+        if (service == null) { System.out.println("Service not found."); return; }
+
+        Booking booking = bookingService.createBooking(client, consultant, service, slot);
+        if (booking != null) System.out.println("Booking created: " + booking);
+    }
+
+    private static void cancelBooking(Client client) {
+        List<Booking> bookings = bookingService.getBookingHistory(client.getId());
+        if (bookings.isEmpty()) { System.out.println("No bookings found."); return; }
+        bookings.forEach(b -> System.out.println("  [" + b.getId() + "] " + b));
+        System.out.print("Booking ID to cancel: ");
+        double refund = bookingService.cancelBooking(readInt(), client.getId());
+        System.out.printf("Booking cancelled. Refund: $%.2f%n", refund);
+    }
+
+    private static void viewBookingHistory(Client client) {
+        List<Booking> bookings = bookingService.getBookingHistory(client.getId());
+        if (bookings.isEmpty()) { System.out.println("No bookings found."); return; }
+        bookings.forEach(b -> System.out.println("  " + b));
+    }
+
+    // CONSULTANT MENU — stub
 
     private static void showConsultantMenu() {
         System.out.println("\nCONSULTANT MENU — coming soon");
         logout();
     }
+
+    // ADMIN MENU — stub
 
     private static void showAdminMenu() {
         System.out.println("\nADMIN MENU — coming soon");
