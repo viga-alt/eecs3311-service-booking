@@ -67,12 +67,12 @@ public class ConsoleApp {
 
     // Instantiate all services with the default system policy
     private static void initServices() {
-        systemPolicy      = new SystemPolicy();
+        systemPolicy = new SystemPolicy();
         consultantService = new ConsultantService();
         // BookingService needs the active cancellation policy at construction time
-        bookingService    = new BookingService(systemPolicy.getCancellationPolicy());
-        paymentService    = new PaymentService();
-        adminService      = new AdminService(consultantService, systemPolicy);
+        bookingService = new BookingService(systemPolicy.getCancellationPolicy());
+        paymentService = new PaymentService();
+        adminService = new AdminService(consultantService, systemPolicy);
     }
 
     // Pre-populate the system with sample users, services, slots and a payment method so the app can be tested immediately without manual setup
@@ -221,7 +221,10 @@ public class ConsoleApp {
     // UC1: list all platform services
     private static void browseServices() {
         List<Service> services = consultantService.getAllServices();
-        if (services.isEmpty()) { System.out.println("No services available."); return; }
+        if (services.isEmpty()) { 
+            System.out.println("No services available."); 
+            return; 
+        }
         // Each Service.toString() prints id, name, duration, price and description
         services.forEach(s -> System.out.println("  " + s));
     }
@@ -230,21 +233,33 @@ public class ConsoleApp {
     private static void requestBooking(Client client) {
         // Only show consultants who have been approved by the admin
         List<Consultant> consultants = consultantService.getAllApprovedConsultants();
-        if (consultants.isEmpty()) { System.out.println("No approved consultants available."); return; }
+        if (consultants.isEmpty()) { 
+            System.out.println("No approved consultants available."); 
+            return; 
+        }
 
         consultants.forEach(c -> System.out.println("  [" + c.getId() + "] " + c.getName() + " (" + c.getSpecialization() + ")"));
         System.out.print("Consultant ID: ");
         Consultant consultant = consultantService.getConsultantById(readInt());
-        if (consultant == null) { System.out.println("Not found."); return; }
+        if (consultant == null) { 
+            System.out.println("Not found."); 
+            return; 
+        }
 
         // Only show slots that are not already taken by another booking
         List<TimeSlot> slots = consultantService.getAvailableSlots(consultant.getId());
-        if (slots.isEmpty()) { System.out.println("No available slots."); return; }
+        if (slots.isEmpty()) { 
+            System.out.println("No available slots."); 
+            return; 
+        }
         slots.forEach(ts -> System.out.println("  [" + ts.getId() + "] " + ts));
         System.out.print("Slot ID: ");
         TimeSlot slot = consultant.findSlotById(readInt());
         // Double-check availability in case slot was taken between listing and selection
-        if (slot == null || !slot.isAvailable()) { System.out.println("Slot not available."); return; }
+        if (slot == null || !slot.isAvailable()) { 
+            System.out.println("Slot not available."); 
+            return; 
+        }
 
         // Show only the services this specific consultant offers
         List<Service> services = consultant.getOfferedServices();
@@ -252,7 +267,10 @@ public class ConsoleApp {
         System.out.print("Service ID: ");
         int sid = readInt();
         Service service = services.stream().filter(s -> s.getId() == sid).findFirst().orElse(null);
-        if (service == null) { System.out.println("Service not found."); return; }
+        if (service == null) { 
+            System.out.println("Service not found."); 
+            return; 
+        }
 
         // BookingService handles state initialization, observer wiring and slot reservation
         Booking booking = bookingService.createBooking(client, consultant, service, slot);
@@ -262,7 +280,11 @@ public class ConsoleApp {
     // UC3: cancel a booking, refund amount depends on the active cancellation policy
     private static void cancelBooking(Client client) {
         List<Booking> bookings = bookingService.getBookingHistory(client.getId());
-        if (bookings.isEmpty()) { System.out.println("No bookings found."); return; }
+        if (bookings.isEmpty()) { 
+            System.out.println("No bookings found."); 
+            return; 
+        }
+
         bookings.forEach(b -> System.out.println("  [" + b.getId() + "] " + b));
         System.out.print("Booking ID to cancel: ");
         // cancelBooking returns the refund amount (0.0 if no refund applies under current policy)
@@ -273,7 +295,10 @@ public class ConsoleApp {
     // UC4: show all bookings and their current states
     private static void viewBookingHistory(Client client) {
         List<Booking> bookings = bookingService.getBookingHistory(client.getId());
-        if (bookings.isEmpty()) { System.out.println("No bookings found."); return; }
+        if (bookings.isEmpty()) { 
+            System.out.println("No bookings found."); 
+            return; 
+        }
         // Booking.toString() includes id, client, consultant, service name and current state
         bookings.forEach(b -> System.out.println("  " + b));
     }
@@ -290,17 +315,26 @@ public class ConsoleApp {
         System.out.print("Booking ID: ");
         // Fetch directly from DB to get the live object (state may have changed since list was built)
         Booking booking = db.findBookingById(readInt());
-        if (booking == null) { System.out.println("Booking not found."); return; }
+        if (booking == null) { 
+            System.out.println("Booking not found."); 
+            return; 
+        }
 
         // Show all payment methods saved to this client's account
         List<PaymentMethod> methods = client.getPaymentMethods();
-        if (methods.isEmpty()) { System.out.println("No saved payment methods. Add one via option 6."); return; }
+        if (methods.isEmpty()) { 
+            System.out.println("No saved payment methods. Add one via option 6."); 
+            return; 
+        }
         methods.forEach(pm -> System.out.println("  [" + pm.getId() + "] " + pm));
         System.out.print("Payment Method ID (0 = default): ");
         int pmId = readInt();
         // 0 is a shortcut to use whichever method the client has marked as default
         PaymentMethod method = pmId == 0 ? client.getDefaultPaymentMethod() : client.getPaymentMethodById(pmId);
-        if (method == null) { System.out.println("Payment method not found."); return; }
+        if (method == null) { 
+            System.out.println("Payment method not found."); 
+            return; 
+        }
 
         // PaymentService validates the method details, simulates processing delay,
         // generates a transaction ID and advances the booking state to PAID on success
@@ -321,10 +355,18 @@ public class ConsoleApp {
                 // Print all saved methods with their IDs and types
                 client.getPaymentMethods().forEach(pm -> System.out.println("  " + pm)); 
                 break;
-            case "2": addCardMethod(client, "CREDIT_CARD"); break;
-            case "3": addCardMethod(client, "DEBIT_CARD");  break;
-            case "4": addPayPalMethod(client);              break;
-            case "5": addBankMethod(client);                break;
+            case "2": 
+                addCardMethod(client, "CREDIT_CARD"); 
+                break;
+            case "3": 
+                addCardMethod(client, "DEBIT_CARD");  
+                break;
+            case "4": 
+                addPayPalMethod(client);              
+                break;
+            case "5": 
+                addBankMethod(client);                
+                break;
             case "6":
                 client.getPaymentMethods().forEach(pm -> System.out.println("  [" + pm.getId() + "] " + pm));
                 System.out.print("ID to remove: ");
@@ -341,9 +383,15 @@ public class ConsoleApp {
 
     // Shared helper for adding CREDIT_CARD or DEBIT_CARD - validation rules are identical for both
     private static void addCardMethod(Client client, String type) {
-        System.out.print("Card number (16 digits): "); String num = scanner.nextLine().trim();
-        System.out.print("Expiry (MM/YY): ");          String exp = scanner.nextLine().trim();
-        System.out.print("CVV (3-4 digits): ");         String cvv = scanner.nextLine().trim();
+        System.out.print("Card number (16 digits): "); 
+        String num = scanner.nextLine().trim();
+
+        System.out.print("Expiry (MM/YY): ");          
+        String exp = scanner.nextLine().trim();
+
+        System.out.print("CVV (3-4 digits): ");         
+        String cvv = scanner.nextLine().trim();
+
         PaymentMethod pm = paymentService.createPaymentMethod(type);
         // Store details as key-value pairs; the payment strategy reads these on validation
         pm.addDetail("cardNumber", num);
@@ -366,8 +414,12 @@ public class ConsoleApp {
     }
 
     private static void addBankMethod(Client client) {
-        System.out.print("Account number (8-17 digits): "); String acct    = scanner.nextLine().trim();
-        System.out.print("Routing number (9 digits): ");    String routing = scanner.nextLine().trim();
+        System.out.print("Account number (8-17 digits): "); 
+        String acct = scanner.nextLine().trim();
+
+        System.out.print("Routing number (9 digits): ");
+        String routing = scanner.nextLine().trim();
+
         PaymentMethod pm = paymentService.createPaymentMethod("BANK_TRANSFER");
         // BankTransferStrategy validates account number length and routing number format
         pm.addDetail("accountNumber", acct);
@@ -380,7 +432,10 @@ public class ConsoleApp {
     // UC7: show full payment history for this client
     private static void viewPaymentHistory(Client client) {
         List<Payment> payments = paymentService.getPaymentHistory(client.getId());
-        if (payments.isEmpty()) { System.out.println("No payments found."); return; }
+        if (payments.isEmpty()) { 
+            System.out.println("No payments found."); 
+            return; 
+        }
         // Payment.toString() shows transaction ID, amount, method type, status and timestamp
         payments.forEach(p -> System.out.println("  " + p));
     }
@@ -432,9 +487,15 @@ public class ConsoleApp {
     private static void manageAvailability(Consultant consultant) {
         // Show existing slots before prompting to add a new one
         consultant.getAvailableSlots().forEach(ts -> System.out.println("  " + ts));
-        System.out.print("Days from today: ");  int days     = readInt();
-        System.out.print("Start hour (0-23): "); int startH  = readInt();
-        System.out.print("Duration (hours): ");  int duration = readInt();
+
+        System.out.print("Days from today: ");  
+        int days = readInt();
+
+        System.out.print("Start hour (0-23): "); 
+        int startH = readInt();
+
+        System.out.print("Duration (hours): "); 
+        int duration = readInt();
         // Use milliseconds mod 100000 as a simple unique ID that avoids conflicts with seeded slot IDs
         int id = (int)(System.currentTimeMillis() % 100000);
         TimeSlot slot = new TimeSlot(id,
@@ -449,7 +510,10 @@ public class ConsoleApp {
     private static void viewPendingBookings(Consultant consultant) {
         // Only returns bookings in REQUESTED state - confirmed/rejected ones are filtered out
         List<Booking> pending = bookingService.getPendingBookingsForConsultant(consultant.getId());
-        if (pending.isEmpty()) { System.out.println("No pending requests."); return; }
+        if (pending.isEmpty()) { 
+            System.out.println("No pending requests."); 
+            return; 
+        }
         pending.forEach(b -> System.out.println("  [" + b.getId() + "] " + b));
     }
 
@@ -475,7 +539,10 @@ public class ConsoleApp {
         List<Booking> paid = bookingService.getBookingsForConsultant(consultant.getId()).stream()
                 .filter(b -> "PAID".equals(b.getCurrentStateName()))
                 .collect(Collectors.toList());
-        if (paid.isEmpty()) { System.out.println("No paid bookings to complete."); return; }
+        if (paid.isEmpty()) { 
+            System.out.println("No paid bookings to complete."); 
+            return; 
+        }
         paid.forEach(b -> System.out.println("  [" + b.getId() + "] " + b));
         System.out.print("Booking ID to complete: ");
         bookingService.completeBooking(readInt(), consultant.getId());
@@ -539,14 +606,20 @@ public class ConsoleApp {
                 // SystemPolicy.toString() prints cancellation type, default payment method and notification settings
                 System.out.println(adminService.getSystemPolicy());
                 break;
-            case "0": logout(); break;
-            default:  System.out.println("Invalid choice.");
+            case "0": 
+                logout(); 
+                break;
+            default:
+                System.out.println("Invalid choice.");
         }
     }
 
     // Reads an integer from stdin; returns -1 on bad input instead of crashing
     private static int readInt() {
-        try { return Integer.parseInt(scanner.nextLine().trim()); }
-        catch (NumberFormatException e) { return -1; }
+        try { 
+            return Integer.parseInt(scanner.nextLine().trim()); 
+        } catch (NumberFormatException e) { 
+            return -1; 
+        }
     }
 }
