@@ -45,34 +45,9 @@ Each payment method has different validation rules. `PaymentProcessor` auto-sele
 
 The admin can switch between three policies at runtime: `FlexibleCancellationPolicy` (100% refund), `StrictCancellationPolicy` (25% refund), and `NoCancellationPolicy` (no cancellation after confirmation). `BookingService` holds the active policy and enforces it on every cancellation request.
 
-## Use Cases
-
-| UC | Description | Key Classes |
-|----|-------------|-------------|
-| UC1 | Browse Consulting Services | ConsultantService, Service |
-| UC2 | Request a Booking | BookingService, Booking, TimeSlot |
-| UC3 | Cancel a Booking | BookingService, CancellationPolicy |
-| UC4 | View Booking History | BookingService |
-| UC5 | Process Payment | PaymentService, PaymentProcessor, PaymentStrategy |
-| UC6 | Manage Payment Methods | Client, PaymentService |
-| UC7 | View Payment History | PaymentService |
-| UC8 | Manage Availability | ConsultantService, TimeSlot |
-| UC9 | Accept or Reject Booking | BookingService |
-| UC10 | Complete a Booking | BookingService |
-| UC11 | Approve Consultant Registration | AdminService, ConsultantService |
-| UC12 | Define System Policies | AdminService, SystemPolicy |
-
-## Payment Validation
-
-All payment processing is simulated with a 2-3 second delay and a generated transaction ID.
-
-| Method | Validation |
-|--------|------------|
-| Credit Card / Debit Card | 16-digit number, future MM/YY expiry, 3-4 digit CVV |
-| PayPal | Valid email address |
-| Bank Transfer | 8-17 digit account number, 9-digit routing number |
-
 ## How to Run
+
+### Linux
 
 Requires Java 11 or higher (`java --version` to check).
 
@@ -95,16 +70,3 @@ Sample data loads automatically on startup. To do a full end-to-end test:
 3. Back as Bob, process payment using the pre-saved credit card
 4. Back as Dave, mark the session as completed
 5. Login as **Admin** (`admin@platform.com` / `admin123`) to change policies or approve new consultants
-
-## Team Contributions
-
-| Member | Area |
-|--------|------|
-| TBD | Booking logic — BookingService, State pattern |
-| TBD | Payment system — PaymentService, Strategy pattern |
-| TBD | User management — AdminService, ConsultantService, Observer pattern |
-| TBD | Frontend UI — ConsoleApp, DatabaseManager Singleton |
-
-## GitHub Repository
-
-https://github.com/viga-alt/eecs3311-service-booking.git
