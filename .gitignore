@@ -11,6 +11,16 @@
 *.sln.docstates
 *.env
 
+# Maven / Java build
+target/
+*.class
+*.jar
+!.mvn/wrapper/*.jar
+
+# Frontend build
+frontend/dist/
+frontend/node_modules/
+
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
