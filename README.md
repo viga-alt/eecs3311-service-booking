@@ -161,7 +161,3 @@ See [AI_CHATBOT_DOCUMENTATION.md](AI_CHATBOT_DOCUMENTATION.md) for full details.
 | frontend | 3000 | Nginx serving React build, proxies /api to backend |
 | backend | 8080 | Spring Boot REST API |
 | db | 3306 | MySQL 8.0 with persistent volume |
-
-## Team Member Contributions
-
-See Git commit history for individual contributions.
